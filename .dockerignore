@@ -4,6 +4,8 @@
 .cursor
 .DS_Store
 .env
+.env.*
+!.env.example
 
 node_modules
 frontend/node_modules
@@ -21,3 +23,29 @@ frontend/dist
 frontend/.vite
 
 backend/uploads
+backend/data
+data
+
+# Docs and repo metadata not needed in runtime image
+README.md
+README-EN.md
+LICENSE
+
+# Static docs/demo assets are not referenced by the runtime app
+static
+
+# Logs, temp files, and heavy archives
+*.log
+*.zip
+*.tar
+*.gz
+*.bz2
+*.xz
+*.7z
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.psd
+*.ai
+*.iso
