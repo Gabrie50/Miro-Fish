@@ -4,20 +4,31 @@
 .cursor
 .DS_Store
 .env
+.env.example
+.env.local
+.env.*.local
 
 node_modules
 frontend/node_modules
 backend/.venv
+backend/venv
 .venv
 .python-version
+backend/.python-version
 
 __pycache__
 *.pyc
 .pytest_cache
 .mypy_cache
 .ruff_cache
+.cache
+*.log
+*.tmp
 
 frontend/dist
 frontend/.vite
 
 backend/uploads
+backend/data/**/*.json
+backend/data/**/*.csv
+backend/data/**/*.parquet

@@ -7,7 +7,8 @@ COPY package.json package-lock.json ./
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 
 RUN npm ci \
-  && npm ci --prefix frontend
+  && npm ci --prefix frontend \
+  && npm cache clean --force
 
 
 FROM python:3.11-slim AS python-builder
@@ -22,14 +23,18 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 COPY backend/pyproject.toml backend/uv.lock ./
 
 RUN uv venv \
-  && uv sync --frozen
+  && uv sync --frozen --no-dev \
+  && rm -rf /root/.cache/uv /root/.cache/pip
 
 
 FROM python:3.11-slim
 
 WORKDIR /app
 
-ENV PATH="/app/backend/.venv/bin:${PATH}"
+ENV PATH="/app/backend/.venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1
+
+COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
 # Final image needs both Python and Node because `npm run dev` starts frontend and backend.
 RUN apt-get update \
