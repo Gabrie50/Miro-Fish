@@ -18,6 +18,36 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _normalizar_rodada(item: dict) -> dict:
+    """Aceita formatos cru, já normalizado ou formato da API histórica."""
+    if {"id", "data_hora", "player_score", "banker_score", "soma", "resultado"}.issubset(item):
+        rodada = dict(item)
+        rodada.setdefault("dados_json", item)
+        return rodada
+
+    data = item.get("data", item)
+    player_score = data.get("playerScore", data.get("player_score", 0))
+    banker_score = data.get("bankerScore", data.get("banker_score", 0))
+    resultado = data.get("resultado")
+    if not resultado:
+        if player_score > banker_score:
+            resultado = "PLAYER"
+        elif banker_score > player_score:
+            resultado = "BANKER"
+        else:
+            resultado = "TIE"
+
+    return {
+        "id": item.get("id", data.get("id")),
+        "data_hora": data.get("settledAt", data.get("data_hora")),
+        "player_score": player_score,
+        "banker_score": banker_score,
+        "soma": data.get("soma", player_score + banker_score),
+        "resultado": resultado,
+        "dados_json": item,
+    }
+
+
 def setup_completo():
     print("\n" + "=" * 60)
     print("🚀 CONFIGURAÇÃO COMPLETA DO MIROFISH PARA BAC BO")
@@ -35,13 +65,18 @@ def setup_completo():
 
     with caminho_json.open("r", encoding="utf-8") as arquivo:
         dados = json.load(arquivo)
+    if isinstance(dados, dict):
+        dados = dados.get("items", [])
+
     print(f"✅ Carregadas {len(dados)} rodadas do arquivo")
 
     print("\n💾 3. Salvando dados no banco...")
     db = SessionLocal()
     try:
         for item in dados:
-            salvar_rodada(db, item)
+            rodada = _normalizar_rodada(item)
+            if rodada["id"] and rodada["data_hora"]:
+                salvar_rodada(db, rodada)
         print("✅ Dados salvos com sucesso!")
     finally:
         db.close()

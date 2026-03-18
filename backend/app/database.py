@@ -113,17 +113,21 @@ def salvar_rodada(db: Session, rodada: dict):
         return existente
 
     data_hora_raw = rodada["data_hora"]
-    if data_hora_raw.endswith("Z"):
-        data_hora_raw = data_hora_raw.replace("Z", "+00:00")
+    if isinstance(data_hora_raw, datetime):
+        data_hora = data_hora_raw
+    else:
+        if data_hora_raw.endswith("Z"):
+            data_hora_raw = data_hora_raw.replace("Z", "+00:00")
+        data_hora = datetime.fromisoformat(data_hora_raw)
 
     nova_rodada = RodadaBacBo(
         id=rodada["id"],
-        data_hora=datetime.fromisoformat(data_hora_raw),
+        data_hora=data_hora,
         player_score=rodada["player_score"],
         banker_score=rodada["banker_score"],
         soma=rodada["soma"],
         resultado=rodada["resultado"],
-        dados_json=rodada["dados_json"],
+        dados_json=rodada.get("dados_json", rodada),
     )
     db.add(nova_rodada)
     db.commit()
