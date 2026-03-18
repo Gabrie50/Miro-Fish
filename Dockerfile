@@ -7,7 +7,8 @@ COPY package.json package-lock.json ./
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 
 RUN npm ci \
-  && npm ci --prefix frontend \
+  --no-audit --no-fund \
+  && npm ci --prefix frontend --no-audit --no-fund \
   && npm cache clean --force
 
 
@@ -15,22 +16,24 @@ FROM python:3.11-slim AS python-builder
 
 WORKDIR /app/backend
 
-ENV UV_LINK_MODE=copy \
-    UV_COMPILE_BYTECODE=1
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
+    PIP_NO_CACHE_DIR=1
 
-# Reuse the official uv binaries and install Python deps before copying app code.
-COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
-COPY backend/pyproject.toml backend/uv.lock ./
+# Install runtime Python dependencies from requirements for faster container builds.
+COPY backend/requirements.txt ./requirements.txt
 
-RUN uv venv \
-  && uv sync --frozen --no-dev
+RUN python -m venv "${VIRTUAL_ENV}" \
+  && pip install -r requirements.txt
 
 
 FROM python:3.11-slim
 
 WORKDIR /app
 
-ENV PATH="/app/backend/.venv/bin:${PATH}"
+ENV PATH="/opt/venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 # Final image needs both Python and Node because `npm run dev` starts frontend and backend.
 RUN apt-get update \
@@ -40,7 +43,7 @@ RUN apt-get update \
 # Copy prebuilt dependency layers first.
 COPY --from=node-builder /app/node_modules ./node_modules
 COPY --from=node-builder /app/frontend/node_modules ./frontend/node_modules
-COPY --from=python-builder /app/backend/.venv ./backend/.venv
+COPY --from=python-builder /opt/venv /opt/venv
 
 # Copy source code last to maximize layer cache reuse.
 COPY package.json package-lock.json ./
