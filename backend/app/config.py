@@ -34,6 +34,18 @@ class Config:
     
     # Zep配置
     ZEP_API_KEY = os.environ.get('ZEP_API_KEY')
+
+    # BAC BO 数据源与数据库配置
+    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///mirofish_bacbo.db')
+    BACBO_API_URL = os.environ.get(
+        'BACBO_API_URL',
+        'https://api-cs.casino.org/svc-evolution-game-events/api/bacbo',
+    )
+    BACBO_LATEST_URL = os.environ.get(
+        'BACBO_LATEST_URL',
+        'https://api-cs.casino.org/svc-evolution-game-events/api/bacbo/latest',
+    )
+    BACBO_WS_URL = os.environ.get('BACBO_WS_URL', 'wss://api-cs.casino.org/svc-evolution-game-events/ws/bacbo')
     
     # 文件上传配置
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
@@ -69,7 +81,4 @@ class Config:
         errors = []
         if not cls.LLM_API_KEY:
             errors.append("LLM_API_KEY 未配置")
-        if not cls.ZEP_API_KEY:
-            errors.append("ZEP_API_KEY 未配置")
         return errors
-
